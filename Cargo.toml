@@ -4,3 +4,4 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+kahypar_r = { git = "https://github.com/profmadden/kahypar_r" }
