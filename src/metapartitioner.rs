@@ -55,7 +55,6 @@ impl Metapartitioner {
 
     pub fn hg_ka_partition(&self, hg: &HyperGraph) -> (Vec<c_int>,Vec<c_int>,usize) {
         let mut partition = hg.part.clone();
-        let mut bins = vec![0; self.k];
         unsafe {
             kahypar_r::partition(
                 hg.vtxwt.len() as u32,
@@ -69,11 +68,9 @@ impl Metapartitioner {
                 self.num_starts as i32, // Passes
                 1 as u64 // Seed
             );
-            for i in 0..partition.len() {
-                bins[partition[i] as usize] = bins[partition[i] as usize] + hg.vtxwt[i];
-            }
         }
-        (partition, bins, 0)      
+        let (bins, cut) = self.evaluate(&hg, &partition);
+        (partition, bins, cut)
     }
     
     
@@ -103,8 +100,8 @@ impl Metapartitioner {
 
     pub fn show(&self, hg: &HyperGraph, part: &Vec<c_int>, bins: &Vec<c_int>, cut: usize) {
         println!("Graph: {} vertices, {} edges.  Cut {}", hg.vtxwt.len(), hg.eind.len() - 1, cut);
-        for b in bins {
-            println!("Bin weight: {}", b);
+        for b in 0..bins.len() {
+            println!("Bin {} weight: {}", b, bins[b]);
         }
         let mut max_v = part.len();
         if max_v > 10 { max_v = 10;}
@@ -120,10 +117,13 @@ impl Metapartitioner {
         }
 
         let mut cut = 0;
-        for i in 1..hg.eptr.len() {
+        for i in 1..hg.eind.len() {
             let mut netbin = vec![false; self.k];
             let mut count = 0;
-            for v in hg.eind[i - 1]..hg.eind[i] {
+            // println!("Net {i} from {} to {}", hg.eind[i - 1], hg.eind[i]);
+            for vptr in hg.eind[i - 1]..hg.eind[i] {
+                let v = hg.eptr[vptr as usize];
+                // println!("Vertex {} is in partition {}", v, part[v as usize]);
                 if !netbin[part[v as usize] as usize] {
                     count = count + 1;
                     netbin[part[v as usize] as usize] = true;
