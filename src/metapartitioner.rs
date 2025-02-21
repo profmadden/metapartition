@@ -36,7 +36,7 @@ impl Metapartitioner {
         Metapartitioner {
             num_starts: 1,
             k: 2,
-            partitioner_type: Partitioner::D,
+            partitioner_type: Partitioner::K,
             objective: Objective::C,
             seed: 8675309,
         }
@@ -54,8 +54,9 @@ impl Metapartitioner {
     }
 
     pub fn hg_ka_partition(&self, hg: &HyperGraph) -> (Vec<c_int>,Vec<c_int>,usize) {
+        let mut partition = hg.part.clone();
+        let mut bins = vec![0; self.k];
         unsafe {
-            let mut partition = hg.part.clone();
             kahypar_r::partition(
                 hg.vtxwt.len() as u32,
                 (hg.eind.len() - 1) as u32,
@@ -68,15 +69,11 @@ impl Metapartitioner {
                 self.num_starts as i32, // Passes
                 1 as u64 // Seed
             );
-            // for i in 0..cells.len() {
-            //     if hg.part[i] == 0 {
-            //         nmod1.push(cells[i]);
-            //     } else {
-            //         nmod2.push(cells[i]);
-            //     }
-            // }
+            for i in 0..partition.len() {
+                bins[partition[i] as usize] = bins[partition[i] as usize] + hg.vtxwt[i];
+            }
         }
-        (Vec::new(), Vec::new(), 0)      
+        (partition, bins, 0)      
     }
     
     

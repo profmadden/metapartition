@@ -7,5 +7,6 @@ fn main() {
     let mp = Metapartitioner::new();
     let (part, bins, cut) = mp.hg_partition(&hg);
     println!("Cut is {}", cut);
+    mp.show(&hg, &part, &bins, cut);
 
 }
