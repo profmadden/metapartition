@@ -3,6 +3,8 @@ use crate::hypergraph::HyperGraph;
 use std::os::raw::{c_int, c_uint, c_ulong};
 use std::fmt;
 use kahypar_r;
+#[cfg(feature = "hmetis")]
+use hmetis_r;
 
 pub enum Partitioner {
     H, // hMetis
@@ -49,7 +51,9 @@ impl Metapartitioner {
     pub fn hg_partition(&self, hg: &HyperGraph) -> (Vec<c_int>,Vec<c_int>,usize) {
         match self.partitioner_type {
             Partitioner::K => {return self.hg_ka_partition(hg);},
-            _ => {println!("Not supported"); return (Vec::new(),Vec::new(),0); }
+            #[cfg(feature = "hmetis")]
+            Partitioner::H => {return self.hg_hm_partition(hg);},            
+            _ => {println!("Partitioner not supported"); return (Vec::new(),Vec::new(),0); }
         }
     }
 
@@ -73,6 +77,39 @@ impl Metapartitioner {
         (partition, bins, cut)
     }
     
+
+    pub fn hg_hm_partition(&self, hg: &HyperGraph) -> (Vec<c_int>,Vec<c_int>,usize) {
+        let mut partition = hg.part.clone();
+        unsafe {
+            let mut eind_int = Vec::with_capacity(hg.eind.len());
+            for v in &hg.eind {
+                eind_int.push(*v as c_int);
+                println!("Convert eind {}", *v);
+            }
+            let mut eptr_int = Vec::with_capacity(hg.eptr.len());
+            for v in &hg.eptr {
+                eptr_int.push(*v as c_int);
+            }
+            // NOTE THE SWAP of eind and eptr.  Different usage in
+            // kahypar universe versus hmetis.  Weirdness.
+            #[cfg(feature = "hmetis")]
+            hmetis_r::hm_partition(
+                hg.vtxwt.len() as u32,
+                (hg.eind.len() - 1) as u32,
+                hg.hewt.as_ptr(),
+                hg.vtxwt.as_ptr(),
+                eptr_int.as_ptr(),
+                eind_int.as_ptr(),
+                partition.as_mut_ptr(),
+                self.k as i32,
+                self.num_starts as i32, // Passes
+                1 as u64 // Seed
+            );
+        }
+        println!("Back from the hmetis call");
+        let (bins, cut) = self.evaluate(&hg, &partition);
+        (partition, bins, cut)
+    }
     
     
     // The dumb partitioner.  Sorts the vertices by weight (descending), then assigns
