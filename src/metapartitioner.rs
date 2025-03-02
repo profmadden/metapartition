@@ -84,7 +84,7 @@ impl Metapartitioner {
             let mut eind_int = Vec::with_capacity(hg.eind.len());
             for v in &hg.eind {
                 eind_int.push(*v as c_int);
-                println!("Convert eind {}", *v);
+                // println!("Convert eind {}", *v);
             }
             let mut eptr_int = Vec::with_capacity(hg.eptr.len());
             for v in &hg.eptr {
@@ -106,7 +106,7 @@ impl Metapartitioner {
                 1 as u64 // Seed
             );
         }
-        println!("Back from the hmetis call");
+        // println!("Back from the hmetis call");
         let (bins, cut) = self.evaluate(&hg, &partition);
         (partition, bins, cut)
     }
