@@ -61,7 +61,7 @@ impl Metapartitioner {
 
     pub fn hg_ka_partition(&self, hg: &HyperGraph) -> (Vec<c_int>,Vec<c_int>,usize) {
         let mut partition = hg.part.clone();
-        println!("Balance {}", self.imbalance);
+        // println!("Balance {}", self.imbalance);
         unsafe {
             kahypar_r::partition(
                 hg.vtxwt.len() as u32,
