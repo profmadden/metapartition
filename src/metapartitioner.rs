@@ -1,6 +1,6 @@
 
 use crate::hypergraph::HyperGraph;
-use std::os::raw::{c_int, c_uint, c_ulong};
+use std::os::raw::{c_int, c_uint, c_ulong, c_float};
 use std::fmt;
 use kahypar_r;
 #[cfg(feature = "hmetis")]
@@ -25,6 +25,7 @@ pub struct Metapartitioner {
     pub partitioner_type: Partitioner,
     pub objective: Objective,
     pub seed: u64,
+    pub imbalance: f32,
 }
 
 
@@ -41,6 +42,7 @@ impl Metapartitioner {
             partitioner_type: Partitioner::K,
             objective: Objective::C,
             seed: 8675309,
+            imbalance: 0.01,
         }
     }
     /// Partitions the graph, using the partitioner and k values indicated.  Will
@@ -59,6 +61,7 @@ impl Metapartitioner {
 
     pub fn hg_ka_partition(&self, hg: &HyperGraph) -> (Vec<c_int>,Vec<c_int>,usize) {
         let mut partition = hg.part.clone();
+        println!("Balance {}", self.imbalance);
         unsafe {
             kahypar_r::partition(
                 hg.vtxwt.len() as u32,
@@ -70,7 +73,8 @@ impl Metapartitioner {
                 partition.as_mut_ptr(),
                 self.k as i32,
                 self.num_starts as i32, // Passes
-                1 as u64 // Seed
+                self.seed as u64, // Seed
+                self.imbalance as c_float,
             );
         }
         let (bins, cut) = self.evaluate(&hg, &partition);
@@ -103,7 +107,7 @@ impl Metapartitioner {
                 partition.as_mut_ptr(),
                 self.k as i32,
                 self.num_starts as i32, // Passes
-                1 as u64 // Seed
+                self.seed as u64 // Seed
             );
         }
         // println!("Back from the hmetis call");

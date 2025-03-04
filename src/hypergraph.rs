@@ -102,14 +102,20 @@ impl HyperGraph {
             g.part.push(-1);
         }
 
+        let mut numfixed = 0;
         if fix.is_some() {
             let mut lineio = lineio::LineIO::new(&fix.unwrap().clone());
             for v in 0..num_v as usize {
                 let s = lineio.getline().unwrap();
                 let vals = HyperGraph::to_ints(&s);
                 g.part[v] = vals[0];
+                if vals[0] != -1 {
+                    numfixed = numfixed + 1;
+                }
             }
+            println!("{} fixed vertices", numfixed);
         }
+
         
         g
 

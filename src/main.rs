@@ -19,6 +19,14 @@ struct Args {
     /// hmetis partitioner
     #[argh(switch, short='H')]
     hmetis: bool,
+
+    /// seed for the partitioner
+    #[argh(option, short='s')]
+    seed: Option<u64>,
+
+    /// imbalance factor
+    #[argh(option, short='b')]
+    balance: Option<f32>,
 }
 
 fn main() {
@@ -27,12 +35,18 @@ fn main() {
     let args: Args = argh::from_env();
     let hg = HyperGraph::load(&args.hgr.unwrap(), args.fix);
     let mut mp = Metapartitioner::new();
+    if args.seed.is_some() {
+        mp.seed = args.seed.unwrap();
+    }
     if args.hmetis {
         mp.partitioner_type = Partitioner::H;
     }
+    if args.balance.is_some() {
+        mp.imbalance = args.balance.unwrap();
+    }
     let (part, bins, cut) = mp.hg_partition(&hg);
     println!("Cut is {}  bin0: {} bin1: {}", cut, bins[0], bins[1]);
-    // mp.show(&hg, &part, &bins, cut);
+    mp.show(&hg, &part, &bins, cut);
     // hg.save(None, 0, None, None, None);
     return;
 
