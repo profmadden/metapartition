@@ -107,7 +107,8 @@ impl Metapartitioner {
                 partition.as_mut_ptr(),
                 self.k as i32,
                 self.num_starts as i32, // Passes
-                self.seed as u64 // Seed
+                self.seed as u64, // Seed
+                (self.imbalance * 100.0) as i32
             );
         }
         // println!("Back from the hmetis call");

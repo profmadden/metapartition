@@ -120,6 +120,12 @@ impl HyperGraph {
         g
 
     }
+
+    /// Saves a hypergraph in the hMetis format.  Also can save the fix
+    /// file (with indications on which vertices are fixed), and can
+    /// also generate a file containing the partitioning.
+    /// File names are passed in as options (use None to prevent file
+    /// creation)
     pub fn save(&self, hgr: Option<&String>, mode: usize, fix: Option<&String>, part: Option<&String>, stats: Option<&String>) {
         println!{"EPTR: {:?}", self.eptr};
         println!("EIND: {:?}", self.eind);
@@ -151,6 +157,23 @@ impl HyperGraph {
             }
         }
         
+    }
+
+    // Will need to build a list of edges that touch each vertex
+
+    /// Performs a breadth-first search from the list of source vertices,
+    /// returning a vector containing the distance from the start for
+    /// each vertex.  Twice the number of vertices is used as the
+    /// "infinite" value.  Edges with more than "limit" connections
+    /// are skipped.
+    pub fn bfs(&self, sources: &Vec<usize>, limit: usize) -> Vec<usize> {
+        let mut result = Vec::new();
+        let inf = self.vtxwt.len() * 2;
+        for _i in 0..self.vtxwt.len() {
+            result.push(inf);
+        }
+
+        result
     }
 }
 
