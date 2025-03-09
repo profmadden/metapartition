@@ -40,14 +40,22 @@ struct VW {
 
 impl Metapartitioner {
     pub fn new() -> Metapartitioner {
-        Metapartitioner {
+        let mut mp = Metapartitioner {
             num_starts: 1,
             k: 2,
             partitioner_type: Partitioner::K,
             objective: Objective::C,
             seed: 8675309,
             imbalance: 0.01,
+        };
+        // If mt-KaHyPar is available, prefer that
+        #[cfg(feature="mtkahypar")]
+        {
+            mp.partitioner_type = Partitioner::MT;
         }
+
+        mp
+
     }
     /// Partitions the graph, using the partitioner and k values indicated.  Will
     /// run multiple starts, selecting the best for the supplied objective.  Returns
