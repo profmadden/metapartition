@@ -27,6 +27,10 @@ struct Args {
     /// imbalance factor
     #[argh(option, short='b')]
     balance: Option<f32>,
+
+    /// partitioner type
+    #[argh(switch, short='M')]
+    mtkahypar: bool,
 }
 
 fn main() {
@@ -40,6 +44,9 @@ fn main() {
     }
     if args.hmetis {
         mp.partitioner_type = Partitioner::H;
+    }
+    if args.mtkahypar {
+        mp.partitioner_type = Partitioner::MT;
     }
     if args.balance.is_some() {
         mp.imbalance = args.balance.unwrap();
