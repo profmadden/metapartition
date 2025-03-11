@@ -34,11 +34,12 @@ struct Args {
 }
 
 fn main() {
-
-
+    println!("Generic meta partitioner, with hypergraph support.");
     let args: Args = argh::from_env();
-    let hg = HyperGraph::load(&args.hgr.unwrap(), args.fix);
+
     let mut mp = Metapartitioner::new();
+    println!("Metapartiton: default partitioner is {}", Metapartitioner::name(&mp.partitioner_type));
+    
     if args.seed.is_some() {
         mp.seed = args.seed.unwrap();
     }
@@ -51,29 +52,20 @@ fn main() {
     if args.balance.is_some() {
         mp.imbalance = args.balance.unwrap();
     }
-    let (part, bins, cut) = mp.hg_partition(&hg);
-    println!("Cut is {}  bin0: {} bin1: {}", cut, bins[0], bins[1]);
-    mp.show(&hg, &part, &bins, cut);
-    // hg.save(None, 0, None, None, None);
-    return;
+    if Metapartitioner::available(&mp.partitioner_type) {
+        println!("Partitioner {} is available", Metapartitioner::name(&mp.partitioner_type));
+    } else {
+        println!("Partitioner {} is NOT available", Metapartitioner::name(&mp.partitioner_type));
+        return;
+    }
 
-    println!("Generic meta partitioner, with hypergraph support.");
-    let hg = HyperGraph::hm_sample();
-    println!("Hypergraph details: {}", hg);
-    let mut mp = Metapartitioner::new();
-    let (part, bins, cut) = mp.hg_partition(&hg);
-    println!("Cut is {}", cut);
-    mp.show(&hg, &part, &bins, cut);
-
-    println!("Calling hmetis partitioner");
-    mp.partitioner_type = metapartition::metapartitioner::Partitioner::H;
-    let (part, bins, cut) = mp.hg_partition(&hg);
-    println!("Cut is {}", cut);
-    mp.show(&hg, &part, &bins, cut);
-
-    println!("Done.");
-
-    // unsafe {
-    //  hmetis_r::hm_hello();
-    // }
+    if args.hgr.is_some() {
+        let hg = HyperGraph::load(&args.hgr.unwrap(), args.fix);
+        let (part, bins, cut) = mp.hg_partition(&hg);
+        println!("Cut is {}  bin0: {} bin1: {}", cut, bins[0], bins[1]);
+        mp.show(&hg, &part, &bins, cut);
+        return;
+    } else {
+        println!("Specify a hypergraph file with -hgr to select a graph to partition.");
+    }
 }

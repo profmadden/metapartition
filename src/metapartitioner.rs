@@ -21,7 +21,8 @@ pub enum Partitioner {
 
 pub enum Objective {
     C, // Minimum cut
-    D, // Minimum sum-of-degrees
+    D, // Minimum sum-of-degrees SOED
+    K, // K minus 1
 }
 pub struct Metapartitioner {
     pub num_starts: usize,
@@ -39,6 +40,11 @@ struct VW {
 }
 
 impl Metapartitioner {
+    /// Creates a new metapartitioner context, setting the
+    /// partitioner type to the default for the compile
+    /// configuration.  On Macs, this is likely hMetis
+    /// (using the hMetis 2.0 library built for x86_64-apple-darwin).
+    /// On a Linux installation, the default will be mt-KaHyPar.
     pub fn new() -> Metapartitioner {
         let mut mp = Metapartitioner {
             num_starts: 1,
@@ -48,15 +54,52 @@ impl Metapartitioner {
             seed: 8675309,
             imbalance: 0.01,
         };
-        // If mt-KaHyPar is available, prefer that
+        // Initial default is kahypar, if available
+        #[cfg(feature="kahypar")]
+        {
+            mp.partitioner_type = Partitioner::K;
+        }
+        // hMetis is preferred to KaHyPar, if available.  hMetis
+        // handles fixed vertices well (and for applications in circuit
+        // placement, that's essential).
+        #[cfg(feature="hmetis")]
+        {
+            mp.partitioner_type = Partitioner::H;
+        }
+        // If mt-KaHyPar is available, prefer that over both
+        // hMetis and KaHyPar.  mt-KaHyPar handles fixed terminals.
+        // Some experiments will be conducted to try to compare these
         #[cfg(feature="mtkahypar")]
         {
             mp.partitioner_type = Partitioner::MT;
         }
 
         mp
-
     }
+
+    /// Returns true if the specified partitioner is compiled
+    /// into the library, false otherwise.
+    pub fn available(partitioner: &Partitioner) -> bool {
+        match partitioner {
+            #[cfg(feature="kahypar")]
+            Partitioner::K => {return true;},
+            #[cfg(feature="mtkahypar")]
+            Partitioner::MT => {return true;},
+            #[cfg(feature="hmetis")]
+            Partitioner::H => {return true;},
+            _ => {return false;}
+        }
+    }
+    /// Returns a char string for the readable name of the partitioner.
+    pub fn name(partitioner: &Partitioner) -> &'static str {
+        match partitioner {
+            Partitioner::K => {return "KaHyPar";},
+            Partitioner::MT => {return "mt-KaHyPar";},
+            Partitioner::H => {return "hMetis";},
+            _ => {return "Unknown";}
+        }
+    }
+
     /// Partitions the graph, using the partitioner and k values indicated.  Will
     /// run multiple starts, selecting the best for the supplied objective.  Returns
     /// the bin assignment as the first vector, the total weight in each bin
