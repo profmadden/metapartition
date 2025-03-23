@@ -132,7 +132,7 @@ impl Metapartitioner {
                 self.k as i32,
                 self.num_starts as i32, // Passes
                 self.seed as u64, // Seed
-                self.imbalance as c_float,
+                // self.imbalance as c_float,
             );
         }
         let (bins, cut) = self.evaluate(&hg, &partition);

@@ -38,12 +38,59 @@ impl HyperGraph {
         }
     }
 
+    /// Fixes a set of vertices to a specified side of the partition
+    pub fn fix(&mut self, vertices: &Vec<usize>, part: c_int) {
+        for v in vertices {
+            self.part[*v] = part;
+        }
+    }
+
+    /// Adds additional weight to one side or another, 
+    pub fn bias(&mut self, b: f32) {
+        // Splitting exactly in half?  Nothing to do
+        if b == 0.5 {
+            return;
+        }
+
+        let mut fix0 = None;
+        let mut fix1 = None;
+        let mut a = 0;
+        for i in 0..self.vtxwt.len() {
+            a = a + self.vtxwt[i];
+            if self.part[i] == 0 {
+                fix0 = Some(i);
+            }
+            if self.part[i] == 1 {
+                fix1 = Some(i);
+            }
+        }
+        // Add weight to the 1 side, so that the 0 side has less
+        if b < 0.5 {
+            let add_wt = 1;
+            if fix1.is_none() {
+                // Create a vertex on side 1 if we need it
+                self.vtxwt.push(add_wt);
+                self.part.push(1);
+            } else {
+                self.vtxwt[fix1.unwrap()] += add_wt;
+            }
+            return;
+        }
+        let add_wt = 1;
+        if fix0.is_none() {
+            self.vtxwt.push(add_wt);
+            self.part.push(0);
+        } else {
+            self.vtxwt[fix0.unwrap()] += add_wt;
+        }
+    }
+
     fn to_ints(s: &String) -> Vec<i32> {
         s.split_whitespace().map(|v| v.parse().unwrap()).collect()
     }
 
     pub fn load(hgr: &String, fix: Option<String>) -> HyperGraph {
-        let mut lineio = lineio::LineIO::new(hgr);
+        let mut lineio = lineio::LineIO::new(hgr).unwrap();
         let s = lineio.getline().unwrap();
         println!("Load {}", s);
         let vals = HyperGraph::to_ints(&s);
@@ -104,7 +151,7 @@ impl HyperGraph {
 
         let mut numfixed = 0;
         if fix.is_some() {
-            let mut lineio = lineio::LineIO::new(&fix.unwrap().clone());
+            let mut lineio = lineio::LineIO::new(&fix.unwrap().clone()).unwrap();
             for v in 0..num_v as usize {
                 let s = lineio.getline().unwrap();
                 let vals = HyperGraph::to_ints(&s);

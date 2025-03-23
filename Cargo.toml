@@ -10,11 +10,13 @@ kahypar = ["dep:kahypar_r"]
 mtkahypar = ["dep:mtkahypar_r"]
 
 [dependencies]
-kahypar_r = { optional = true, git = "https://github.com/profmadden/kahypar_r" }
+# kahypar_r = { optional = true, git = "https://github.com/profmadden/kahypar_r" }
+kahypar_r = { optional = true, path = "../kahypar_r" }
 hmetis_r =  {optional = true, git = "https://github.com/profmadden/hmetis_r"}
 # mtkahypar_r = {optional = true, path = "../mtkahypar_r"}
 mtkahypar_r = {optional = true, git = "https://github.com/profmadden/mtkahypar_r"}
 
-lineio = {git = "https://github.com/profmadden/lineio"}
+# lineio = {git = "https://github.com/profmadden/lineio"}
 
 argh = "0.1.13"
+lineio = "0.1.1"
