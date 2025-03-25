@@ -1,5 +1,7 @@
 use std::os::raw::{c_int, c_uint, c_ulong};
 use std::fmt;
+use std::collections::VecDeque;
+use std::collections::BinaryHeap;
 use lineio;
 
 pub struct HyperGraph {
@@ -14,11 +16,11 @@ pub struct HyperGraph {
 impl HyperGraph {
     pub fn new() -> HyperGraph {
         HyperGraph {
-            vtxwt: Vec::new(),
-            hewt: Vec::new(),
-            part: Vec::new(),
-            eind: Vec::new(),
-            eptr: Vec::new()
+            vtxwt: Vec::new(), // vertex weight
+            hewt: Vec::new(), // hyperedge weight
+            part: Vec::new(), // partition
+            eind: Vec::new(), // edge index
+            eptr: Vec::new() // edge pointer
         }        
     }
     /// The hMetis manual gives a small 7-vertex, 4-hyperedge example
@@ -159,6 +161,36 @@ impl HyperGraph {
         
     }
 
+    pub fn vertex_edge_container(&self) -> Vec<usize>
+    {
+
+        // Get mapping of edges to vertices
+        let mut num_edges = 0;
+        if self.eptr.is_empty()
+        {
+            num_edges = 0;
+        }
+        else
+        {
+            num_edges = self.eptr.len() - 1;
+        }
+
+        let mut vert_edge_container: Vec<Vec<usize>> = vec![vec![]; self.vtxwt.len()] ;
+
+        for edge in 0..num_edges 
+        {
+            let start = self.eptr[edge] as usize;
+            let end = self.eptr[edge + 1] as usize;
+            for i in start..end 
+            {
+                let vertex  = self.eind[i] as usize;
+                vert_edge_container[vertex].push(edge);
+            }
+        }
+
+        vert_edge_container
+    }
+
     // Will need to build a list of edges that touch each vertex
 
     /// Performs a breadth-first search from the list of source vertices,
@@ -166,15 +198,147 @@ impl HyperGraph {
     /// each vertex.  Twice the number of vertices is used as the
     /// "infinite" value.  Edges with more than "limit" connections
     /// are skipped.
+
     pub fn bfs(&self, sources: &Vec<usize>, limit: usize) -> Vec<usize> {
+
+        /*// Get mapping of edges to vertices
+        let mut num_edges = 0;
+        if self.eptr.is_empty()
+        {
+            num_edges = 0;
+        }
+        else
+        {
+            num_edges = self.eptr.len() - 1;
+        }
+
+        let mut vert_edge_container: Vec<Vec<usize>> = vec![vec![]; self.vtxwt.len()] ;
+
+        for edge in 0..num_edges 
+        {
+            let start = self.eptr[edge] as usize;
+            let end = self.eptr[edge + 1] as usize;
+            for i in start..end 
+            {
+                let vertex  = self.eind[i] as usize;
+                vert_edge_container[vertex].push(edge);
+            }
+        }
+*/
+        // Create a new vector
         let mut result = Vec::new();
+
+        // Define infinite as the number of vertices times 2
         let inf = self.vtxwt.len() * 2;
+
+        // Create a vector to keep track of visited vertices using the vec! macro
+        let visited = vec![false; self.vtxwt.len()];
+
+        let mut queue = VecDeque::new();
+
         for _i in 0..self.vtxwt.len() {
             result.push(inf);
         }
 
+        // Push back every element in sources to the queue
+        for i in sources
+        {
+            queue.push_back(*i);
+            result[*i] = 0;
+        }
+
+        let vert_edge_container = self.vertex_edge_container();
+
+        // Some pattern matches, essentially, this while loop continues as long as queue.pop_front() returns some value
+        while let Some(curr) = queue.pop_front()
+        {
+            let current_distance = result[curr];
+            if current_distance > limit
+            {
+                continue;
+            }
+            
+            for &edge in &vert_edge_container[curr]
+            {
+                let start = self.eptr[edge] as usize;
+                let end = self.eptr[edge + 1] as usize;
+
+                // bfs to search every vert in hyperedge
+                for i in start..end
+                {
+                    let neighbor = self.eind[i] as usize;
+
+                    // update path if shorter
+                    if result[neighbor] > current_distance + 1
+                    {
+                        result[neighbor] = current_distance + 1;
+                        queue.push_back(neighbor);
+                    }
+                }
+            }
+        }
+
         result
     }
+}
+
+pub fn dijkstra(&self, sources: &Vec<usize>) -> Vec<usize> 
+{
+    let mut distances = Vec::new();
+    let inf = self.vtxwt.len() * 2;
+
+    let mut visited = Vec![false; self.vtxwt.len()];
+
+    // Initialize all distances to infinity
+    for _vertex in 0..self.vtxwt.len()
+    {
+        distances.push(inf);
+    }
+    
+    // Initialize the distance to self to 0
+    distances[source] = 0; 
+
+    let mut pq = BinaryHeap::new();
+    pq.push(Reverse((source, 0)));
+
+    let vert_edge_container = self.vertex_edge_container();
+
+    while let Some(Reverse((vertex, dist))) = pq.pop()
+    {
+        // Don't think I need this
+        //let curr_vert = vertex;
+        //let curr_dist = dist;
+
+        pq.sort();
+
+        // If the distance that we already have is smaller than continue
+
+        if(distances[vertex] < dist)
+        {
+            continue;
+        }
+
+        // now for each vertex, go through each of its neighbors
+        for &edge in &vert_edge_container[vertex]
+        {
+            let start = self.eptr[edge];
+            let end = self.eptr[edge + 1];
+
+            for i in start..end
+            {
+                let neighbor = self.eind[i] as usize;
+                let weight  = hewt[neighbor];
+                if distances[vertex] > distances[neighbor] 
+                {
+                    distances[vertex] = distances[neighbor];
+                    pq.push(Reverse((vertex, distances[neighbor])))
+                }
+            }
+        }
+
+    }
+
+    distances // ***CHANGE THIS LATER***
 }
 
 impl fmt::Display for HyperGraph {

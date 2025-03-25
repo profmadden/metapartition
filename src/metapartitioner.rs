@@ -1,7 +1,6 @@
 
 use crate::hypergraph::HyperGraph;
-use std::os::raw::{c_int, c_uint, c_ulong, c_float};
-use std::fmt;
+use std::os::raw::{c_int, c_float};
 use kahypar_r;
 #[cfg(feature = "hmetis")]
 use hmetis_r;
@@ -83,7 +82,7 @@ impl Metapartitioner {
     
 
     pub fn hg_hm_partition(&self, hg: &HyperGraph) -> (Vec<c_int>,Vec<c_int>,usize) {
-        let mut partition = hg.part.clone();
+        let partition = hg.part.clone();
         unsafe {
             let mut eind_int = Vec::with_capacity(hg.eind.len());
             for v in &hg.eind {
@@ -120,7 +119,7 @@ impl Metapartitioner {
     // The dumb partitioner.  Sorts the vertices by weight (descending), then assigns
     // the vertices to bins to minimize the difference in weights
     pub fn partition_dumb(&self, hg: &HyperGraph) -> Vec<c_int> {
-        let mut bins = vec![0 as c_int; self.k];
+        let bins = vec![0 as c_int; self.k];
 
         let mut verts = Vec::with_capacity(hg.vtxwt.len());
         for i in 0..hg.vtxwt.len() {
