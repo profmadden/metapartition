@@ -208,9 +208,8 @@ impl HyperGraph {
         
     }
 
-    pub fn vertex_edge_container(&self) -> Vec<usize>
+    pub fn vertex_edge_container(&self) -> Vec<Vec<usize>>
     {
-
         // Get mapping of edges to vertices
         let mut num_edges = 0;
         if self.eptr.is_empty()
@@ -329,67 +328,67 @@ impl HyperGraph {
     }
 }
 
-pub fn dijkstra(&self, sources: &Vec<usize>) -> Vec<usize> 
-{
-    let mut distances = Vec::new();
-    let inf = self.vtxwt.len() * 2;
+// pub fn dijkstra(&self, sources: &Vec<usize>) -> Vec<usize> 
+// {
+//     let mut distances = Vec::new();
+//     let inf = self.vtxwt.len() * 2;
 
-    let mut visited = Vec![false; self.vtxwt.len()];
+//     let mut visited = Vec![false; self.vtxwt.len()];
 
-    // Initialize all distances to infinity
-    for _vertex in 0..self.vtxwt.len()
-    {
-        distances.push(inf);
-    }
+//     // Initialize all distances to infinity
+//     for _vertex in 0..self.vtxwt.len()
+//     {
+//         distances.push(inf);
+//     }
     
-    // Initialize the distance to self to 0
-    distances[source] = 0; 
+//     // Initialize the distance to self to 0
+//     distances[source] = 0; 
 
-    let mut pq = BinaryHeap::new();
-    pq.push(Reverse((source, 0)));
+//     let mut pq = BinaryHeap::new();
+//     pq.push(Reverse((source, 0)));
 
-    let vert_edge_container = self.vertex_edge_container();
+//     let vert_edge_container = self.vertex_edge_container();
 
-    while let Some(Reverse((vertex, dist))) = pq.pop()
-    {
-        // Don't think I need this
-        //let curr_vert = vertex;
-        //let curr_dist = dist;
+//     while let Some(Reverse((vertex, dist))) = pq.pop()
+//     {
+//         // Don't think I need this
+//         //let curr_vert = vertex;
+//         //let curr_dist = dist;
 
-        pq.sort();
+//         pq.sort();
 
-        // If the distance that we already have is smaller than continue
+//         // If the distance that we already have is smaller than continue
 
-        if(distances[vertex] < dist)
-        {
-            continue;
-        }
+//         if(distances[vertex] < dist)
+//         {
+//             continue;
+//         }
 
-        // now for each vertex, go through each of its neighbors
-        for &edge in &vert_edge_container[vertex]
-        {
-            let start = self.eptr[edge];
-            let end = self.eptr[edge + 1];
+//         // now for each vertex, go through each of its neighbors
+//         for &edge in &vert_edge_container[vertex]
+//         {
+//             let start = self.eptr[edge];
+//             let end = self.eptr[edge + 1];
 
-            for i in start..end
-            {
-                let neighbor = self.eind[i] as usize;
-                let weight  = hewt[neighbor];
-                if distances[vertex] > distances[neighbor] 
-                {
-                    distances[vertex] = distances[neighbor];
-                    pq.push(Reverse((vertex, distances[neighbor])))
-                }
-            }
-        }
+//             for i in start..end
+//             {
+//                 let neighbor = self.eind[i] as usize;
+//                 let weight  = hewt[neighbor];
+//                 if distances[vertex] > distances[neighbor] 
+//                 {
+//                     distances[vertex] = distances[neighbor];
+//                     pq.push(Reverse((vertex, distances[neighbor])))
+//                 }
+//             }
+//         }
 
-    }
+//     }
 
-    distances // ***CHANGE THIS LATER***
-}
+//     distances // ***CHANGE THIS LATER***
+// }
 
-impl fmt::Display for HyperGraph {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "HyperGraph: {} vertices, {} edges", self.vtxwt.len(), self.hewt.len())
-    }
-}
+// impl fmt::Display for HyperGraph {
+//     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+//         write!(f, "HyperGraph: {} vertices, {} edges", self.vtxwt.len(), self.hewt.len())
+//     }
+// }

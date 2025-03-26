@@ -1,12 +1,8 @@
 
 use crate::hypergraph::HyperGraph;
-<<<<<<< HEAD
-use std::os::raw::{c_int, c_float};
-=======
 use std::os::raw::{c_int, c_uint, c_ulong, c_float};
 use std::fmt;
 #[cfg(feature = "kahypar")]
->>>>>>> refs/remotes/origin/main
 use kahypar_r;
 #[cfg(feature = "mtkahypar")]
 use mtkahypar_r;
