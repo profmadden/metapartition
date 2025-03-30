@@ -2,6 +2,7 @@ use std::os::raw::{c_int, c_uint, c_ulong};
 use std::fmt;
 use std::collections::VecDeque;
 use std::collections::BinaryHeap;
+use std::cmp::Reverse;
 use lineio;
 
 pub struct HyperGraph {
