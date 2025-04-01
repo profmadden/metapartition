@@ -228,16 +228,16 @@ impl HyperGraph {
         }
 
         let mut vert_edge_container: Vec<Vec<usize>> = vec![vec![]; self.vtxwt.len()] ;
-        println!("Reserve space for {} vertices", self.vtxwt.len());
+        // println!("Reserve space for {} vertices", self.vtxwt.len());
         for edge in 0..num_edges 
         {
             let start = self.eind[edge] as usize;
             let end = self.eind[edge + 1] as usize;
-            println!("Edge {} indexes [{} to {})", edge, start, end);
+            // println!("Edge {} indexes [{} to {})", edge, start, end);
             for i in start..end 
             {
                 let vertex  = self.eptr[i] as usize;
-                println!("Vertex {} [index {}] contains edge {}", vertex, i, edge);
+                // println!("Vertex {} [index {}] contains edge {}", vertex, i, edge);
                 vert_edge_container[vertex].push(edge);
             }
         }
@@ -338,7 +338,7 @@ impl HyperGraph {
         result
     }
 
-    pub fn dijkstra(&self, sources: &Vec<usize>) -> Vec<usize> 
+    pub fn dijkstra(&self, sources: &Vec<usize>, edgelength: &Vec<usize>) -> Vec<usize> 
     {
     
         // Create a vector to hold distances

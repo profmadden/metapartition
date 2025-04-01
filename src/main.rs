@@ -31,6 +31,14 @@ struct Args {
     /// partitioner type
     #[argh(switch, short='M')]
     mtkahypar: bool,
+
+    /// run BFS
+    #[argh(switch)]
+    bfs: bool,
+
+    /// run Dijkstra
+    #[argh(switch)]
+    dijkstra: bool,
 }
 
 fn main() {
@@ -61,6 +69,34 @@ fn main() {
 
     if args.hgr.is_some() {
         let hg = HyperGraph::load(&args.hgr.unwrap(), args.fix);
+
+        if args.bfs {
+            let sources = vec![0];
+            let distances = hg.bfs(&sources, 100);
+            for i in 0..distances.len() {
+                println!("Vertex {} distance {}", i, distances[i]);
+            }
+            return;
+        }
+
+        if args.dijkstra {
+            println!("Running Dijkstra");
+            let sources = vec![0];
+            let mut edgelength = Vec::new();
+            for edge in 0..hg.eind.len() - 1 {
+                let start = hg.eind[edge];
+                let end = hg.eind[edge + 1];
+                let len = end - start;
+                edgelength.push(len as usize);
+            }
+            let distances = hg.dijkstra(&sources, &edgelength);
+            for i in 0..distances.len() {
+                println!("Vertex {} distance {}", i, distances[i]);
+            }
+            return;
+        }
+
+
         let (part, bins, cut) = mp.hg_partition(&hg);
         println!("Cut is {}  bin0: {} bin1: {}", cut, bins[0], bins[1]);
         mp.show(&hg, &part, &bins, cut);
