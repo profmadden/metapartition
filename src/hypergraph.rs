@@ -2,6 +2,7 @@ use std::os::raw::{c_int, c_uint, c_ulong};
 use std::fmt;
 use std::collections::VecDeque;
 use std::collections::BinaryHeap;
+use std::cmp::Reverse;
 use lineio;
 
 pub struct HyperGraph {
@@ -326,69 +327,79 @@ impl HyperGraph {
 
         result
     }
+
+    pub fn dijkstra(&self, sources: &Vec<usize>) -> Vec<usize> 
+    {
+    
+        // Create a vector to hold distances
+         let mut distances = Vec::new();
+         let inf = self.vtxwt.len() * 2;
+    
+         // Initialize all distances to infinity
+         for _vertex in 0..self.vtxwt.len()
+         {
+             distances.push(inf);
+         }
+        
+         let mut pq = BinaryHeap::new();
+    
+         for &i in sources
+         {
+            distances[i] = 0; // set distance to self to 0
+            pq.push(Reverse((0, i))); // push source vertices to priority queue
+         }
+    
+         let vert_edge_container = self.vertex_edge_container();
+    
+         while let Some(Reverse((dist, vertex))) = pq.pop()
+         {
+             // Don't think I need this
+             //let curr_vert = vertex;
+             //let curr_dist = dist;
+    
+             let curr_distance = distances[vertex];
+    
+             // Check if the distance we're popping is greater than our best distance,
+             // If so don't even bother, go to the next
+    
+             if dist > curr_distance
+             {
+                 continue;
+             }
+    
+             // Now for each vertex, go through each of its neighbors
+             for &edge in &vert_edge_container[vertex]
+             {
+                 let start = self.eptr[edge] as usize;
+                 let end = self.eptr[edge + 1] as usize;
+    
+                 for i in start..end
+                 {
+                     let neighbor = self.eind[i] as usize;
+                     let weight  = self.hewt[edge] as usize;
+
+                     let new_distance = curr_distance + weight;
+
+                     // Check if distance + weight is less than the distance to get to the neighbor
+                     if new_distance < distances[neighbor] 
+                     {
+                        // Update distance to neighbor to be the new disance and push the vertex-dist pair to pq
+                        distances[neighbor] = new_distance;
+                        pq.push(Reverse((new_distance, neighbor)))
+                     }
+                 }
+             }
+         }
+    
+         // Return the distance vector
+         distances 
+    }
 }
 
-// pub fn dijkstra(&self, sources: &Vec<usize>) -> Vec<usize> 
-// {
-//     let mut distances = Vec::new();
-//     let inf = self.vtxwt.len() * 2;
 
-//     let mut visited = Vec![false; self.vtxwt.len()];
 
-//     // Initialize all distances to infinity
-//     for _vertex in 0..self.vtxwt.len()
-//     {
-//         distances.push(inf);
-//     }
-    
-//     // Initialize the distance to self to 0
-//     distances[source] = 0; 
-
-//     let mut pq = BinaryHeap::new();
-//     pq.push(Reverse((source, 0)));
-
-//     let vert_edge_container = self.vertex_edge_container();
-
-//     while let Some(Reverse((vertex, dist))) = pq.pop()
-//     {
-//         // Don't think I need this
-//         //let curr_vert = vertex;
-//         //let curr_dist = dist;
-
-//         pq.sort();
-
-//         // If the distance that we already have is smaller than continue
-
-//         if(distances[vertex] < dist)
-//         {
-//             continue;
-//         }
-
-//         // now for each vertex, go through each of its neighbors
-//         for &edge in &vert_edge_container[vertex]
-//         {
-//             let start = self.eptr[edge];
-//             let end = self.eptr[edge + 1];
-
-//             for i in start..end
-//             {
-//                 let neighbor = self.eind[i] as usize;
-//                 let weight  = hewt[neighbor];
-//                 if distances[vertex] > distances[neighbor] 
-//                 {
-//                     distances[vertex] = distances[neighbor];
-//                     pq.push(Reverse((vertex, distances[neighbor])))
-//                 }
-//             }
-//         }
-
-//     }
-
-//     distances // ***CHANGE THIS LATER***
-// }
-
-// impl fmt::Display for HyperGraph {
-//     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-//         write!(f, "HyperGraph: {} vertices, {} edges", self.vtxwt.len(), self.hewt.len())
-//     }
-// }
+ impl fmt::Display for HyperGraph {
+     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+         write!(f, "HyperGraph: {} vertices, {} edges", self.vtxwt.len(), self.hewt.len())
+     }
+ }
