@@ -172,7 +172,7 @@ impl Metapartitioner {
     
 
     pub fn hg_hm_partition(&self, hg: &HyperGraph) -> (Vec<c_int>,Vec<c_int>,usize) {
-        let partition = hg.part.clone();
+        let mut partition = hg.part.clone();
         unsafe {
             let mut eind_int = Vec::with_capacity(hg.eind.len());
             for v in &hg.eind {
