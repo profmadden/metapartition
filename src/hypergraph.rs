@@ -140,6 +140,7 @@ impl HyperGraph {
             }
         }
         g.eind.push(ptr_index);
+        println!("eind length: {} eptr length {}", g.eind.len(), g.eptr.len());
 
         for v in 0..num_v {
             if vweight {
@@ -209,6 +210,10 @@ impl HyperGraph {
         
     }
 
+    pub fn show(&self) {
+        println!("Hypergraph has {} edges, {} vertices", self.eptr.len() - 1, self.vtxwt.len());
+    }
+
     pub fn vertex_edge_container(&self) -> Vec<Vec<usize>>
     {
         // Get mapping of edges to vertices
@@ -219,18 +224,20 @@ impl HyperGraph {
         }
         else
         {
-            num_edges = self.eptr.len() - 1;
+            num_edges = self.eind.len() - 1;
         }
 
         let mut vert_edge_container: Vec<Vec<usize>> = vec![vec![]; self.vtxwt.len()] ;
-
+        println!("Reserve space for {} vertices", self.vtxwt.len());
         for edge in 0..num_edges 
         {
-            let start = self.eptr[edge] as usize;
-            let end = self.eptr[edge + 1] as usize;
+            let start = self.eind[edge] as usize;
+            let end = self.eind[edge + 1] as usize;
+            println!("Edge {} indexes [{} to {})", edge, start, end);
             for i in start..end 
             {
-                let vertex  = self.eind[i] as usize;
+                let vertex  = self.eptr[i] as usize;
+                println!("Vertex {} [index {}] contains edge {}", vertex, i, edge);
                 vert_edge_container[vertex].push(edge);
             }
         }
@@ -300,6 +307,7 @@ impl HyperGraph {
         while let Some(curr) = queue.pop_front()
         {
             let current_distance = result[curr];
+            println!("BFS pops vertex {} distance {}", curr, current_distance);
             if current_distance > limit
             {
                 continue;
@@ -307,17 +315,19 @@ impl HyperGraph {
             
             for &edge in &vert_edge_container[curr]
             {
-                let start = self.eptr[edge] as usize;
-                let end = self.eptr[edge + 1] as usize;
+                let start = self.eind[edge] as usize;
+                let end = self.eind[edge + 1] as usize;
+                println!("Checking edge {}, indexes {} to {}", edge, start, end);
 
                 // bfs to search every vert in hyperedge
                 for i in start..end
                 {
-                    let neighbor = self.eind[i] as usize;
-
+                    let neighbor = self.eptr[i] as usize;
+                    println!("Neighbor {} has current distance {}", neighbor, result[neighbor]);
                     // update path if shorter
                     if result[neighbor] > current_distance + 1
                     {
+                        println!("Neighbor {} has old distance {}, updating", neighbor, result[neighbor]);
                         result[neighbor] = current_distance + 1;
                         queue.push_back(neighbor);
                     }
