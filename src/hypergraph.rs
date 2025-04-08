@@ -255,30 +255,6 @@ impl HyperGraph {
 
     pub fn bfs(&self, sources: &Vec<usize>, limit: usize) -> Vec<usize> {
 
-        /*// Get mapping of edges to vertices
-        let mut num_edges = 0;
-        if self.eptr.is_empty()
-        {
-            num_edges = 0;
-        }
-        else
-        {
-            num_edges = self.eptr.len() - 1;
-        }
-
-        let mut vert_edge_container: Vec<Vec<usize>> = vec![vec![]; self.vtxwt.len()] ;
-
-        for edge in 0..num_edges 
-        {
-            let start = self.eptr[edge] as usize;
-            let end = self.eptr[edge + 1] as usize;
-            for i in start..end 
-            {
-                let vertex  = self.eind[i] as usize;
-                vert_edge_container[vertex].push(edge);
-            }
-        }
-*/
         // Create a new vector
         let mut result = Vec::new();
 
@@ -343,8 +319,14 @@ impl HyperGraph {
     
         // Create a vector to hold distances
          let mut distances = Vec::new();
-         let inf = self.vtxwt.len() * 2;
+         let mut inf = 0;//self.vtxwt.len() * 2;
+
+         for &edge in edgelength
+         {
+            inf += edge;
+         }
     
+        println!("inf is {}", inf);
          // Initialize all distances to infinity
          for _vertex in 0..self.vtxwt.len()
          {
@@ -368,6 +350,9 @@ impl HyperGraph {
              //let curr_dist = dist;
     
              let curr_distance = distances[vertex];
+
+             println!("Dijkstra pops vertex {} distance {}", vertex, curr_distance);
+
     
              // Check if the distance we're popping is greater than our best distance,
              // If so don't even bother, go to the next
@@ -380,20 +365,23 @@ impl HyperGraph {
              // Now for each vertex, go through each of its neighbors
              for &edge in &vert_edge_container[vertex]
              {
-                 let start = self.eptr[edge] as usize;
-                 let end = self.eptr[edge + 1] as usize;
+                 let start = self.eind[edge] as usize;
+                 let end = self.eind[edge + 1] as usize;
     
                  for i in start..end
                  {
-                     let neighbor = self.eind[i] as usize;
+                     let neighbor = self.eptr[i] as usize;
                      let weight  = self.hewt[edge] as usize;
 
                      let new_distance = curr_distance + weight;
 
                      // Check if distance + weight is less than the distance to get to the neighbor
+                     println!("Potential new distance for vertex {} is {}, and current distance {}", neighbor, new_distance, distances[neighbor]);
+
                      if new_distance < distances[neighbor] 
                      {
                         // Update distance to neighbor to be the new disance and push the vertex-dist pair to pq
+                        println!("Neighbor {} has old distance {}, updating to new distance of {}", neighbor, distances[neighbor], new_distance);
                         distances[neighbor] = new_distance;
                         pq.push(Reverse((new_distance, neighbor)))
                      }
