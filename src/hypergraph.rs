@@ -279,20 +279,16 @@ impl HyperGraph {
             }
         }
 */
-        // Create a new vector
-        let mut result = Vec::new();
+
 
         // Define infinite as the number of vertices times 2
         let inf = self.vtxwt.len() * 2;
+        // Create a new vector
+        let mut result = vec![inf; self.vtxwt.len()];
 
         // Create a vector to keep track of visited vertices using the vec! macro
-        let visited = vec![false; self.vtxwt.len()];
-
+        // let visited = vec![false; self.vtxwt.len()];
         let mut queue = VecDeque::new();
-
-        for _i in 0..self.vtxwt.len() {
-            result.push(inf);
-        }
 
         // Push back every element in sources to the queue
         for i in sources
