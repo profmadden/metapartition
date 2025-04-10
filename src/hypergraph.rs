@@ -283,7 +283,7 @@ impl HyperGraph {
         while let Some(curr) = queue.pop_front()
         {
             let current_distance = result[curr];
-            println!("BFS pops vertex {} distance {}", curr, current_distance);
+            // println!("BFS pops vertex {} distance {}", curr, current_distance);
             if current_distance > limit
             {
                 continue;
@@ -293,17 +293,17 @@ impl HyperGraph {
             {
                 let start = self.eind[edge] as usize;
                 let end = self.eind[edge + 1] as usize;
-                println!("Checking edge {}, indexes {} to {}", edge, start, end);
+                // println!("  Checking edge {}, indexes {} to {}", edge, start, end);
 
                 // bfs to search every vert in hyperedge
                 for i in start..end
                 {
                     let neighbor = self.eptr[i] as usize;
-                    println!("Neighbor {} has current distance {}", neighbor, result[neighbor]);
+                    // println!("  Neighbor {} has current distance {}", neighbor, result[neighbor]);
                     // update path if shorter
                     if result[neighbor] > current_distance + 1
                     {
-                        println!("Neighbor {} has old distance {}, updating", neighbor, result[neighbor]);
+                        // println!("  Neighbor {} has old distance {}, updating", neighbor, result[neighbor]);
                         result[neighbor] = current_distance + 1;
                         queue.push_back(neighbor);
                     }
