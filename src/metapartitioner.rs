@@ -1,22 +1,20 @@
-
 use crate::hypergraph::HyperGraph;
-use std::os::raw::{c_int, c_uint, c_ulong, c_float};
-use std::fmt;
+#[cfg(feature = "hmetis")]
+use hmetis_r;
 #[cfg(feature = "kahypar")]
 use kahypar_r;
 #[cfg(feature = "mtkahypar")]
 use mtkahypar_r;
-#[cfg(feature = "hmetis")]
-use hmetis_r;
-
+use std::fmt;
+use std::os::raw::{c_float, c_int, c_uint, c_ulong};
 
 pub enum Partitioner {
-    H, // hMetis
-    M, // METIS
-    K, // KaHyPar,
+    H,  // hMetis
+    M,  // METIS
+    K,  // KaHyPar,
     MT, // mt-KaHyPar,
-    D, // Dumb Partitioner
-    X, // Meta-partitioner -- try multiple versions
+    D,  // Dumb Partitioner
+    X,  // Meta-partitioner -- try multiple versions
 }
 
 pub enum Objective {
@@ -32,7 +30,6 @@ pub struct Metapartitioner {
     pub seed: u64,
     pub imbalance: f32,
 }
-
 
 struct VW {
     weight: c_int,
@@ -55,21 +52,21 @@ impl Metapartitioner {
             imbalance: 0.01,
         };
         // Initial default is kahypar, if available
-        #[cfg(feature="kahypar")]
+        #[cfg(feature = "kahypar")]
         {
             mp.partitioner_type = Partitioner::K;
         }
         // hMetis is preferred to KaHyPar, if available.  hMetis
         // handles fixed vertices well (and for applications in circuit
         // placement, that's essential).
-        #[cfg(feature="hmetis")]
+        #[cfg(feature = "hmetis")]
         {
             mp.partitioner_type = Partitioner::H;
         }
         // If mt-KaHyPar is available, prefer that over both
         // hMetis and KaHyPar.  mt-KaHyPar handles fixed terminals.
         // Some experiments will be conducted to try to compare these
-        #[cfg(feature="mtkahypar")]
+        #[cfg(feature = "mtkahypar")]
         {
             mp.partitioner_type = Partitioner::MT;
         }
@@ -81,22 +78,38 @@ impl Metapartitioner {
     /// into the library, false otherwise.
     pub fn available(partitioner: &Partitioner) -> bool {
         match partitioner {
-            #[cfg(feature="kahypar")]
-            Partitioner::K => {return true;},
-            #[cfg(feature="mtkahypar")]
-            Partitioner::MT => {return true;},
-            #[cfg(feature="hmetis")]
-            Partitioner::H => {return true;},
-            _ => {return false;}
+            #[cfg(feature = "kahypar")]
+            Partitioner::K => {
+                return true;
+            }
+            #[cfg(feature = "mtkahypar")]
+            Partitioner::MT => {
+                return true;
+            }
+            #[cfg(feature = "hmetis")]
+            Partitioner::H => {
+                return true;
+            }
+            _ => {
+                return false;
+            }
         }
     }
     /// Returns a char string for the readable name of the partitioner.
     pub fn name(partitioner: &Partitioner) -> &'static str {
         match partitioner {
-            Partitioner::K => {return "KaHyPar";},
-            Partitioner::MT => {return "mt-KaHyPar";},
-            Partitioner::H => {return "hMetis";},
-            _ => {return "Unknown";}
+            Partitioner::K => {
+                return "KaHyPar";
+            }
+            Partitioner::MT => {
+                return "mt-KaHyPar";
+            }
+            Partitioner::H => {
+                return "hMetis";
+            }
+            _ => {
+                return "Unknown";
+            }
         }
     }
 
@@ -105,19 +118,28 @@ impl Metapartitioner {
     /// the bin assignment as the first vector, the total weight in each bin
     /// in the second, and the cost based on the selected objective as the third
     /// value.
-    pub fn hg_partition(&self, hg: &HyperGraph) -> (Vec<c_int>,Vec<c_int>,usize) {
+    pub fn hg_partition(&self, hg: &HyperGraph) -> (Vec<c_int>, Vec<c_int>, usize) {
         match self.partitioner_type {
-            #[cfg(feature="kahypar")]
-            Partitioner::K => {return self.hg_ka_partition(hg);},
+            #[cfg(feature = "kahypar")]
+            Partitioner::K => {
+                return self.hg_ka_partition(hg);
+            }
             #[cfg(feature = "hmetis")]
-            Partitioner::H => {return self.hg_hm_partition(hg);},
-            #[cfg(feature = "mtkahypar")]  
-            Partitioner::MT => {return self.hg_mtka_partition(hg);},         
-            _ => {println!("Partitioner not supported"); return (Vec::new(),Vec::new(),0); }
+            Partitioner::H => {
+                return self.hg_hm_partition(hg);
+            }
+            #[cfg(feature = "mtkahypar")]
+            Partitioner::MT => {
+                return self.hg_mtka_partition(hg);
+            }
+            _ => {
+                println!("Partitioner not supported");
+                return (Vec::new(), Vec::new(), 0);
+            }
         }
     }
 
-    pub fn hg_ka_partition(&self, hg: &HyperGraph) -> (Vec<c_int>,Vec<c_int>,usize) {
+    pub fn hg_ka_partition(&self, hg: &HyperGraph) -> (Vec<c_int>, Vec<c_int>, usize) {
         let mut partition = hg.part.clone();
         // println!("Balance {}", self.imbalance);
         unsafe {
@@ -131,7 +153,7 @@ impl Metapartitioner {
                 partition.as_mut_ptr(),
                 self.k as i32,
                 self.num_starts as i32, // Passes
-                self.seed as u64, // Seed
+                self.seed as u64,       // Seed
                 self.imbalance as c_float,
             );
         }
@@ -139,7 +161,7 @@ impl Metapartitioner {
         (partition, bins, cut)
     }
 
-    pub fn hg_mtka_partition(&self, hg: &HyperGraph) -> (Vec<c_int>,Vec<c_int>,usize) {
+    pub fn hg_mtka_partition(&self, hg: &HyperGraph) -> (Vec<c_int>, Vec<c_int>, usize) {
         let mut partition = hg.part.clone();
         // println!("In the MT interface");
         // In mt-KaHyPar, bot the eptr and eind are long ints,
@@ -162,16 +184,15 @@ impl Metapartitioner {
                 partition.as_mut_ptr(),
                 self.k as i32,
                 self.num_starts as i32, // Passes
-                self.seed as u64, // Seed
+                self.seed as u64,       // Seed
                 self.imbalance as c_float,
             );
         }
         let (bins, cut) = self.evaluate(&hg, &partition);
         (partition, bins, cut)
     }
-    
 
-    pub fn hg_hm_partition(&self, hg: &HyperGraph) -> (Vec<c_int>,Vec<c_int>,usize) {
+    pub fn hg_hm_partition(&self, hg: &HyperGraph) -> (Vec<c_int>, Vec<c_int>, usize) {
         let mut partition = hg.part.clone();
         unsafe {
             let mut eind_int = Vec::with_capacity(hg.eind.len());
@@ -196,8 +217,8 @@ impl Metapartitioner {
                 partition.as_mut_ptr(),
                 self.k as i32,
                 self.num_starts as i32, // Passes
-                self.seed as u64, // Seed
-                (self.imbalance * 100.0) as i32
+                self.seed as u64,       // Seed
+                (self.imbalance * 100.0) as i32,
             );
         }
         // println!("Back from the hmetis call");
@@ -205,9 +226,6 @@ impl Metapartitioner {
         (partition, bins, cut)
     }
 
-
-    
-    
     // The dumb partitioner.  Sorts the vertices by weight (descending), then assigns
     // the vertices to bins to minimize the difference in weights
     pub fn partition_dumb(&self, hg: &HyperGraph) -> Vec<c_int> {
@@ -215,14 +233,14 @@ impl Metapartitioner {
 
         let mut verts = Vec::with_capacity(hg.vtxwt.len());
         for i in 0..hg.vtxwt.len() {
-            verts.push(VW{
+            verts.push(VW {
                 weight: hg.vtxwt[i],
                 index: i,
             });
         }
 
         let mut part = Vec::with_capacity(verts.len());
-        
+
         verts.sort_by_key(|k| k.weight);
         for i in 0..verts.len() {
             part.push(i as c_int % 2);
@@ -232,18 +250,25 @@ impl Metapartitioner {
     }
 
     pub fn show(&self, hg: &HyperGraph, part: &Vec<c_int>, bins: &Vec<c_int>, cut: usize) {
-        println!("Graph: {} vertices, {} edges.  Cut {}", hg.vtxwt.len(), hg.eind.len() - 1, cut);
+        println!(
+            "Graph: {} vertices, {} edges.  Cut {}",
+            hg.vtxwt.len(),
+            hg.eind.len() - 1,
+            cut
+        );
         for b in 0..bins.len() {
             println!("Bin {} weight: {}", b, bins[b]);
         }
         let mut max_v = part.len();
-        if max_v > 16 { max_v = 16;}
+        if max_v > 16 {
+            max_v = 16;
+        }
         for i in 0..max_v {
             println!("Vertex {} mapped to bin {}", i, part[i]);
         }
     }
 
-    pub fn evaluate(&self, hg: &HyperGraph, part: &Vec<c_int>) -> (Vec<c_int>,usize) {
+    pub fn evaluate(&self, hg: &HyperGraph, part: &Vec<c_int>) -> (Vec<c_int>, usize) {
         let mut bins = vec![0 as c_int; self.k];
         for i in 0..part.len() {
             bins[part[i] as usize] = bins[part[i] as usize] + hg.vtxwt[i];
@@ -269,5 +294,4 @@ impl Metapartitioner {
 
         (bins, cut)
     }
-
 }
