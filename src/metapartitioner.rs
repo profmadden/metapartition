@@ -142,6 +142,12 @@ impl Metapartitioner {
     pub fn hg_ka_partition(&self, hg: &HyperGraph) -> (Vec<c_int>, Vec<c_int>, usize) {
         let mut partition = hg.part.clone();
         // println!("Balance {}", self.imbalance);
+        let mut fixed = None;
+        for i in 0..hg.part.len() {
+            if hg.part[i] != -1 {
+                fixed = Some(i);
+            }
+        }
         unsafe {
             kahypar_r::partition(
                 hg.vtxwt.len() as u32,
@@ -156,6 +162,15 @@ impl Metapartitioner {
                 self.seed as u64,       // Seed
                 self.imbalance as c_float,
             );
+        }
+        // Check to see if the fixed cells have flipped sides
+        if fixed.is_some() {
+            // println!("Flipped partition");
+            if partition[fixed.unwrap()] != hg.part[fixed.unwrap()] {
+                for i in 0..partition.len() {
+                    partition[i] = 1 - partition[i];
+                }
+            }
         }
         let (bins, cut) = self.evaluate(&hg, &partition);
         (partition, bins, cut)
