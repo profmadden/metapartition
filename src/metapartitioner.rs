@@ -1,4 +1,6 @@
-use crate::hypergraph::HyperGraph;
+// use crate::hypergraph::HyperGraph;
+use hypergraph::hypergraph::HyperGraph;
+
 #[cfg(feature = "hmetis")]
 use hmetis_r;
 #[cfg(feature = "kahypar")]
@@ -90,6 +92,9 @@ impl Metapartitioner {
             Partitioner::H => {
                 return true;
             }
+            Partitioner::D => {
+                return true;
+            }
             _ => {
                 return false;
             }
@@ -106,6 +111,9 @@ impl Metapartitioner {
             }
             Partitioner::H => {
                 return "hMetis";
+            }
+            Partitioner::D => {
+                return "dumb";
             }
             _ => {
                 return "Unknown";
@@ -132,6 +140,9 @@ impl Metapartitioner {
             Partitioner::MT => {
                 return self.hg_mtka_partition(hg);
             }
+            Partitioner::D => {
+                return self.partition_dumb(hg);
+            }
             _ => {
                 println!("Partitioner not supported");
                 return (Vec::new(), Vec::new(), 0);
@@ -142,6 +153,13 @@ impl Metapartitioner {
     pub fn hg_ka_partition(&self, hg: &HyperGraph) -> (Vec<c_int>, Vec<c_int>, usize) {
         let mut partition = hg.part.clone();
         // println!("Balance {}", self.imbalance);
+        let mut fixed = None;
+        for i in 0..hg.part.len() {
+            if hg.part[i] != -1 {
+                fixed = Some(i);
+                println!("Fixed vertex {}", i);
+            }
+        }
         unsafe {
             kahypar_r::partition(
                 hg.vtxwt.len() as u32,
@@ -156,6 +174,15 @@ impl Metapartitioner {
                 self.seed as u64,       // Seed
                 self.imbalance as c_float,
             );
+        }
+        // Check to see if the fixed cells have flipped sides
+        if fixed.is_some() {
+            if partition[fixed.unwrap()] != hg.part[fixed.unwrap()] {
+                println!("**** Flipped partition ****");
+                for i in 0..partition.len() {
+                    partition[i] = 1 - partition[i];
+                }
+            }
         }
         let (bins, cut) = self.evaluate(&hg, &partition);
         (partition, bins, cut)
@@ -228,25 +255,41 @@ impl Metapartitioner {
 
     // The dumb partitioner.  Sorts the vertices by weight (descending), then assigns
     // the vertices to bins to minimize the difference in weights
-    pub fn partition_dumb(&self, hg: &HyperGraph) -> Vec<c_int> {
-        let bins = vec![0 as c_int; self.k];
-
+    pub fn partition_dumb(&self, hg: &HyperGraph) -> (Vec<c_int>, Vec<c_int>, usize) {
+        let mut bins = vec![0, 0];
         let mut verts = Vec::with_capacity(hg.vtxwt.len());
+        let mut part = vec![0; hg.vtxwt.len()];
+        
         for i in 0..hg.vtxwt.len() {
-            verts.push(VW {
-                weight: hg.vtxwt[i],
-                index: i,
-            });
+            if hg.part[i] == -1 {
+                verts.push(VW {
+                    weight: hg.vtxwt[i],
+                    index: i,
+                });
+            } else {
+                // println!("Fix vertex {} to side {} weight {}", i, hg.part[i], hg.vtxwt[i]);
+                bins[hg.part[i] as usize] += hg.vtxwt[i];
+                part[i] = hg.part[i];
+            }
         }
 
-        let mut part = Vec::with_capacity(verts.len());
-
-        verts.sort_by_key(|k| k.weight);
+        verts.sort_by_key(|k| -k.weight);
         for i in 0..verts.len() {
-            part.push(i as c_int % 2);
-        }
+            let id = verts[i].index;
+            if bins[0] < bins[1] {
+                part[id] = 0;
+                bins[0] += hg.vtxwt[id];
+                // println!("Place vertex {} on 0, weight {}", id, hg.vtxwt[id]);
+            } else {
+                part[id] = 1;
+                bins[1] += hg.vtxwt[id];
+                // println!("Place vertex {} on 1, weight {}", id, hg.vtxwt[id]);
+            }
 
-        part
+        }
+        let (bins, cut) = self.evaluate(hg, &part);
+
+        (part, bins, cut)
     }
 
     pub fn show(&self, hg: &HyperGraph, part: &Vec<c_int>, bins: &Vec<c_int>, cut: usize) {
@@ -288,10 +331,10 @@ impl Metapartitioner {
                 }
             }
             if count > 1 {
-                cut = cut + 1;
+                cut = cut + hg.hewt[i - 1];
             }
         }
 
-        (bins, cut)
+        (bins, cut as usize)
     }
 }

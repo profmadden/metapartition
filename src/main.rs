@@ -1,6 +1,6 @@
 #[cfg(feature = "hmetis")]
 use hmetis_r;
-use metapartition::hypergraph::HyperGraph;
+// use metapartition::hypergraph::HyperGraph;
 use metapartition::metapartitioner::Metapartitioner;
 use metapartition::metapartitioner::Partitioner;
 
@@ -19,6 +19,10 @@ struct Args {
     /// hmetis partitioner
     #[argh(switch, short = 'H')]
     hmetis: bool,
+
+    /// dumb partitioner
+    #[argh(switch, short = 'd')]
+    dumb: bool,
 
     /// seed for the partitioner
     #[argh(option, short = 's')]
@@ -60,6 +64,9 @@ fn main() {
     if args.mtkahypar {
         mp.partitioner_type = Partitioner::MT;
     }
+    if args.dumb {
+        mp.partitioner_type = Partitioner::D;
+    }
     if args.balance.is_some() {
         mp.imbalance = args.balance.unwrap();
     }
@@ -77,7 +84,7 @@ fn main() {
     }
 
     if args.hgr.is_some() {
-        let hg = HyperGraph::load(&args.hgr.unwrap(), args.fix);
+        let hg = hypergraph::hypergraph::HyperGraph::load(&args.hgr.unwrap(), args.fix);
 
         if args.bfs {
             let sources = vec![0];
