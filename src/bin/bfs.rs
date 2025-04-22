@@ -1,6 +1,7 @@
 // Test the BFS code for the hypergraph
 use argh::FromArgs;
-use metapartition::hypergraph;
+// use metapartition::hypergraph;
+use hypergraph::hypergraph::HyperGraph;
 
 #[derive(FromArgs)]
 /// BFS program
@@ -16,9 +17,9 @@ pub fn main() {
 
     let mut hgr;
     if args.hgr.is_some() {
-        hgr = hypergraph::HyperGraph::load(&args.hgr.unwrap(), None);
+        hgr = hypergraph::hypergraph::HyperGraph::load(&args.hgr.unwrap(), None);
     } else {
-        hgr = hypergraph::HyperGraph::hm_sample();
+        hgr = hypergraph::hypergraph::HyperGraph::hm_sample();
     }
     hgr.show();
 
