@@ -10,6 +10,7 @@ use mtkahypar_r;
 use std::fmt;
 use std::os::raw::{c_float, c_int, c_uint, c_ulong};
 
+#[derive(Copy,Clone)]
 pub enum Partitioner {
     H,  // hMetis
     M,  // METIS
@@ -19,11 +20,13 @@ pub enum Partitioner {
     X,  // Meta-partitioner -- try multiple versions
 }
 
+#[derive(Copy,Clone)]
 pub enum Objective {
     C, // Minimum cut
     D, // Minimum sum-of-degrees SOED
     K, // K minus 1
 }
+#[derive(Copy,Clone)]
 pub struct Metapartitioner {
     pub num_starts: usize,
     pub k: usize,
