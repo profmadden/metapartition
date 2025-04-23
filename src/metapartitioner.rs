@@ -160,7 +160,7 @@ impl Metapartitioner {
         for i in 0..hg.part.len() {
             if hg.part[i] != -1 {
                 fixed = Some(i);
-                println!("Fixed vertex {}", i);
+                // println!("Fixed vertex {}", i);
             }
         }
         unsafe {
@@ -181,7 +181,11 @@ impl Metapartitioner {
         // Check to see if the fixed cells have flipped sides
         if fixed.is_some() {
             if partition[fixed.unwrap()] != hg.part[fixed.unwrap()] {
-                println!("**** Flipped partition ****");
+                // KaHyPar seemed to be flipping some fixed vertices(?).
+                // Or it may have been another bug somewhere.
+                // If it looks like the partition has been mirrored, print a
+                // warning message.
+                println!("**** KaHyPar may have flipped the partition ****");
                 for i in 0..partition.len() {
                     partition[i] = 1 - partition[i];
                 }
