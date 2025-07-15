@@ -130,6 +130,7 @@ impl Metapartitioner {
     /// in the second, and the cost based on the selected objective as the third
     /// value.
     pub fn hg_partition(&self, hg: &HyperGraph) -> (Vec<c_int>, Vec<c_int>, usize) {
+        // println!("HG Partition using {} seed {} imbalance {}", Metapartitioner::name(&self.partitioner_type), self.seed, self.imbalance);
         match self.partitioner_type {
             #[cfg(feature = "kahypar")]
             Partitioner::K => {
