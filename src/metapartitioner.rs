@@ -10,7 +10,7 @@ use mtkahypar_r;
 use std::fmt;
 use std::os::raw::{c_float, c_int, c_uint, c_ulong};
 
-#[derive(Copy,Clone)]
+#[derive(Copy, Clone)]
 pub enum Partitioner {
     H,  // hMetis
     M,  // METIS
@@ -20,13 +20,13 @@ pub enum Partitioner {
     X,  // Meta-partitioner -- try multiple versions
 }
 
-#[derive(Copy,Clone)]
+#[derive(Copy, Clone)]
 pub enum Objective {
     C, // Minimum cut
     D, // Minimum sum-of-degrees SOED
     K, // K minus 1
 }
-#[derive(Copy,Clone)]
+#[derive(Copy, Clone)]
 pub struct Metapartitioner {
     pub num_starts: usize,
     pub k: usize,
@@ -39,6 +39,21 @@ pub struct Metapartitioner {
 struct VW {
     weight: c_int,
     index: usize,
+}
+
+/// Returns true if the specified partitioner is compiled
+/// into the library, false otherwise.
+pub fn default_partitioner() -> Partitioner {
+    #[cfg(feature = "mtkahypar")]
+    return Partitioner::MT;
+
+    #[cfg(feature = "hmetis")]
+    return Partitioner::H;
+
+    #[cfg(feature = "kahypar")]
+    return Partitioner::K;
+
+    Partitioner::D
 }
 
 impl Metapartitioner {
@@ -165,6 +180,7 @@ impl Metapartitioner {
             }
         }
         unsafe {
+            #[cfg(feature = "kahypar")]
             kahypar_r::partition(
                 hg.vtxwt.len() as u32,
                 (hg.eind.len() - 1) as u32,
@@ -267,7 +283,7 @@ impl Metapartitioner {
         let mut bins = vec![0, 0];
         let mut verts = Vec::with_capacity(hg.vtxwt.len());
         let mut part = vec![0; hg.vtxwt.len()];
-        
+
         for i in 0..hg.vtxwt.len() {
             if hg.part[i] == -1 {
                 verts.push(VW {
@@ -293,7 +309,6 @@ impl Metapartitioner {
                 bins[1] += hg.vtxwt[id];
                 // println!("Place vertex {} on 1, weight {}", id, hg.vtxwt[id]);
             }
-
         }
         let (bins, cut) = self.evaluate(hg, &part);
 

@@ -5,7 +5,7 @@ edition = "2021"
 default-run = "metapartition"
 
 [features]
-default = ["kahypar"]
+default = []
 hmetis = ["dep:hmetis_r"]
 kahypar = ["dep:kahypar_r"]
 mtkahypar = ["dep:mtkahypar_r"]
